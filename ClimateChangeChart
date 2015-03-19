@@ -1,0 +1,38 @@
+// ClimateChangeChart
+
+
+// Get a boundary from a fusion table
+var bound = ee.FeatureCollection('ft:1uFp7HptCK8EFSCFxwtHLPxp-hO6G6ay6oJkOI4cI');
+
+
+//Filter the climate change data based on climate scenario, model, and climate variables
+var climDat = ee.ImageCollection('NASA/NEX-DCP30')
+    .filterMetadata('scenario', 'equals', 'rcp85')
+    .filterMetadata('model', 'equals', 'GFDL-CM3')
+    .select('tasmin', 'tasmax')
+
+print(climDat.getInfo());
+
+// Group by year, and then reduce within groups by mean();
+// the result is an ImageCollection with one image for each
+// year.
+var years = ee.List.sequence(2010, 2012);
+
+var byYear = ee.ImageCollection.fromImages(
+      years.map(function (y) {
+        return climDat.filter(ee.Filter.calendarRange(y, y, 'year'))
+                    .select('tasmin', 'tasmax').mean()
+                    .set('year', y)
+                    .set('system:time_start',y);
+}));
+print(byYear);
+
+//Create a chart of the climate variable by year
+var climTimeSeries =
+    Chart.image.series(byYear, bound, ee.Reducer.mean(),30);
+
+print(climTimeSeries);
+
+
+Map.addLayer(bound, {'color': '0000FF'});
+Map.setCenter(-121.47, 36.86, 8);
