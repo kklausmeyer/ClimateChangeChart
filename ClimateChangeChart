@@ -7,30 +7,15 @@ var bound = ee.FeatureCollection('ft:1uFp7HptCK8EFSCFxwtHLPxp-hO6G6ay6oJkOI4cI')
 
 //Filter the climate change data based on climate scenario, model, and climate variables
 var climDat = ee.ImageCollection('NASA/NEX-DCP30')
+    .filterDate('2010-1-1', '2012-1-1')  //*2 years works, but 20 years does not*
     .filterMetadata('scenario', 'equals', 'rcp85')
     .filterMetadata('model', 'equals', 'GFDL-CM3')
     .select('tasmin', 'tasmax')
 
 print(climDat.getInfo());
 
-// Group by year, and then reduce within groups by mean();
-// the result is an ImageCollection with one image for each
-// year.
-var years = ee.List.sequence(2010, 2012);
-
-var byYear = ee.ImageCollection.fromImages(
-      years.map(function (y) {
-        return climDat.filter(ee.Filter.calendarRange(y, y, 'year'))
-                    .select('tasmin', 'tasmax').mean()
-                    .set('year', y)
-                    .set('system:time_start',y);
-}));
-print(byYear);
-
 //Create a chart of the climate variable by year
-var climTimeSeries =
-    Chart.image.series(byYear, bound, ee.Reducer.mean(),30);
-
+var climTimeSeries = Chart.image.series(climDat, bound, ee.Reducer.mean(), 30);
 print(climTimeSeries);
 
 
